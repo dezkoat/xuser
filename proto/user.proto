@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option go_package = "github.com/dezkoat/xuser/proto";
+
+package user;
+
+service Content {
+    // Insert new post, id should be left empty.
+    // Returns id of newly created post.
+    rpc Login(User) returns (UserToken) {}
+}
+
+message User {
+    string user_id = 1;
+    string email = 2;
+    string password = 3;
+}
+
+message UserToken {
+    string user_id = 1;
+    string token = 2;
+}
