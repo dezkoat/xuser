@@ -4,16 +4,10 @@ option go_package = "github.com/dezkoat/xuser/proto";
 
 package user;
 
-import "google/protobuf/empty.proto";
-
 service User {
     // Login with supplied email and password.
     // Returns user token.
     rpc Login(UserInfo) returns (UserToken) {}
-
-    // Get public key used to verify user's token
-    // Return string of public key.
-    rpc GetUserPublicKey(google.protobuf.Empty) returns (UserPublicKey) {}
 }
 
 message UserInfo {
@@ -24,9 +18,4 @@ message UserInfo {
 
 message UserToken {
     string token = 1;
-}
-
-message UserPublicKey {
-    string modulus = 1;
-    int64  exponent = 2;
 }

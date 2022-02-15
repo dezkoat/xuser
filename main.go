@@ -15,14 +15,13 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/emptypb"
 
 	pb "github.com/dezkoat/xuser/proto"
 )
 
 var (
 	port           = flag.Int("port", 50002, "Server port")
-	privateKeyPath = flag.String("key", "./key/private.pem", "Private Key File Path")
+	privateKeyPath = flag.String("key", "./key/private.pem", "Private Key File Path used in User Credentials Authentication")
 )
 
 type UserInfo struct {
@@ -55,36 +54,18 @@ func (s *UserServer) Login(ctx context.Context, req *pb.UserInfo) (*pb.UserToken
 	t := jwt.New(jwt.GetSigningMethod("RS256"))
 	t.Claims = &UserClaims{
 		&jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Minute * 60).Unix(),
+			ExpiresAt: time.Now().Add(time.Second * 60).Unix(),
 		},
-		"dean@gmail.com",
+		req.Username,
 	}
 
 	tokenString, err := t.SignedString(s.PrivateKey)
-	log.Printf(tokenString)
-
-	token, err := jwt.ParseWithClaims(tokenString, &UserClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return &s.PrivateKey.PublicKey, nil
-	})
-
 	if err != nil {
-		log.Printf("ERROR!!! %v", err)
+		return nil, err
 	}
 
-	claims := token.Claims.(*UserClaims)
-	log.Printf("[%v]", claims)
-
-	return nil, nil
-}
-
-func (s *UserServer) GetUserPublicKey(ctx context.Context, e *emptypb.Empty) (*pb.UserPublicKey, error) {
-	if s.PrivateKey == nil {
-		return nil, errors.New("Key not initialized")
-	}
-
-	return &pb.UserPublicKey{
-		Modulus:  s.PrivateKey.PublicKey.N.String(),
-		Exponent: int64(s.PrivateKey.PublicKey.E),
+	return &pb.UserToken{
+		Token: tokenString,
 	}, nil
 }
 
@@ -93,7 +74,7 @@ type UserClaims struct {
 	Email string
 }
 
-func readKey() (*rsa.PrivateKey, error) {
+func ReadPrivateKey() (*rsa.PrivateKey, error) {
 	priv, err := ioutil.ReadFile(*privateKeyPath)
 	if err != nil {
 		log.Fatalf("Error reading file %v: %v", privateKeyPath, err)
@@ -103,7 +84,7 @@ func readKey() (*rsa.PrivateKey, error) {
 	return x509.ParsePKCS1PrivateKey(privPem.Bytes)
 }
 
-func initUserMap() map[string]string {
+func InitUserMap() map[string]string {
 	userMap := make(map[string]string)
 	for _, user := range userList {
 		userMap[user.Username] = user.Password
@@ -113,9 +94,9 @@ func initUserMap() map[string]string {
 }
 
 func main() {
-	key, err := readKey()
+	key, err := ReadPrivateKey()
 	if err != nil {
-		log.Fatalf("Error reading key %v", err)
+		log.Fatalf("Error reading private key %v", err)
 	}
 
 	flag.Parse()
@@ -133,7 +114,7 @@ func main() {
 		grpcServer,
 		&UserServer{
 			PrivateKey: key,
-			UserMap:    initUserMap(),
+			UserMap:    InitUserMap(),
 		},
 	)
 	grpcServer.Serve(listener)
