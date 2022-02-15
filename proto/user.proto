@@ -4,19 +4,29 @@ option go_package = "github.com/dezkoat/xuser/proto";
 
 package user;
 
-service Content {
-    // Insert new post, id should be left empty.
-    // Returns id of newly created post.
-    rpc Login(User) returns (UserToken) {}
+import "google/protobuf/empty.proto";
+
+service User {
+    // Login with supplied email and password.
+    // Returns user token.
+    rpc Login(UserInfo) returns (UserToken) {}
+
+    // Get public key used to verify user's token
+    // Return string of public key.
+    rpc GetUserPublicKey(google.protobuf.Empty) returns (UserPublicKey) {}
 }
 
-message User {
+message UserInfo {
     string user_id = 1;
-    string email = 2;
+    string username = 2;
     string password = 3;
 }
 
 message UserToken {
-    string user_id = 1;
-    string token = 2;
+    string token = 1;
+}
+
+message UserPublicKey {
+    string modulus = 1;
+    int64  exponent = 2;
 }

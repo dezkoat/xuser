@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.19.4
-// source: user.proto
+// source: proto/user.proto
 
 package proto
 
@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -18,92 +19,132 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// ContentClient is the client API for Content service.
+// UserClient is the client API for User service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type ContentClient interface {
-	// Insert new post, id should be left empty.
-	// Returns id of newly created post.
-	Login(ctx context.Context, in *User, opts ...grpc.CallOption) (*UserToken, error)
+type UserClient interface {
+	// Login with supplied email and password.
+	// Returns user token.
+	Login(ctx context.Context, in *UserInfo, opts ...grpc.CallOption) (*UserToken, error)
+	// Get public key used to verify user's token
+	// Return string of public key.
+	GetUserPublicKey(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*UserPublicKey, error)
 }
 
-type contentClient struct {
+type userClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewContentClient(cc grpc.ClientConnInterface) ContentClient {
-	return &contentClient{cc}
+func NewUserClient(cc grpc.ClientConnInterface) UserClient {
+	return &userClient{cc}
 }
 
-func (c *contentClient) Login(ctx context.Context, in *User, opts ...grpc.CallOption) (*UserToken, error) {
+func (c *userClient) Login(ctx context.Context, in *UserInfo, opts ...grpc.CallOption) (*UserToken, error) {
 	out := new(UserToken)
-	err := c.cc.Invoke(ctx, "/user.Content/Login", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/user.User/Login", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// ContentServer is the server API for Content service.
-// All implementations must embed UnimplementedContentServer
+func (c *userClient) GetUserPublicKey(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*UserPublicKey, error) {
+	out := new(UserPublicKey)
+	err := c.cc.Invoke(ctx, "/user.User/GetUserPublicKey", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// UserServer is the server API for User service.
+// All implementations must embed UnimplementedUserServer
 // for forward compatibility
-type ContentServer interface {
-	// Insert new post, id should be left empty.
-	// Returns id of newly created post.
-	Login(context.Context, *User) (*UserToken, error)
-	mustEmbedUnimplementedContentServer()
+type UserServer interface {
+	// Login with supplied email and password.
+	// Returns user token.
+	Login(context.Context, *UserInfo) (*UserToken, error)
+	// Get public key used to verify user's token
+	// Return string of public key.
+	GetUserPublicKey(context.Context, *emptypb.Empty) (*UserPublicKey, error)
+	mustEmbedUnimplementedUserServer()
 }
 
-// UnimplementedContentServer must be embedded to have forward compatible implementations.
-type UnimplementedContentServer struct {
+// UnimplementedUserServer must be embedded to have forward compatible implementations.
+type UnimplementedUserServer struct {
 }
 
-func (UnimplementedContentServer) Login(context.Context, *User) (*UserToken, error) {
+func (UnimplementedUserServer) Login(context.Context, *UserInfo) (*UserToken, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
 }
-func (UnimplementedContentServer) mustEmbedUnimplementedContentServer() {}
+func (UnimplementedUserServer) GetUserPublicKey(context.Context, *emptypb.Empty) (*UserPublicKey, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserPublicKey not implemented")
+}
+func (UnimplementedUserServer) mustEmbedUnimplementedUserServer() {}
 
-// UnsafeContentServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to ContentServer will
+// UnsafeUserServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to UserServer will
 // result in compilation errors.
-type UnsafeContentServer interface {
-	mustEmbedUnimplementedContentServer()
+type UnsafeUserServer interface {
+	mustEmbedUnimplementedUserServer()
 }
 
-func RegisterContentServer(s grpc.ServiceRegistrar, srv ContentServer) {
-	s.RegisterService(&Content_ServiceDesc, srv)
+func RegisterUserServer(s grpc.ServiceRegistrar, srv UserServer) {
+	s.RegisterService(&User_ServiceDesc, srv)
 }
 
-func _Content_Login_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(User)
+func _User_Login_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserInfo)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ContentServer).Login(ctx, in)
+		return srv.(UserServer).Login(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/user.Content/Login",
+		FullMethod: "/user.User/Login",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ContentServer).Login(ctx, req.(*User))
+		return srv.(UserServer).Login(ctx, req.(*UserInfo))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// Content_ServiceDesc is the grpc.ServiceDesc for Content service.
+func _User_GetUserPublicKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServer).GetUserPublicKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/user.User/GetUserPublicKey",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServer).GetUserPublicKey(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// User_ServiceDesc is the grpc.ServiceDesc for User service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var Content_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "user.Content",
-	HandlerType: (*ContentServer)(nil),
+var User_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "user.User",
+	HandlerType: (*UserServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Login",
-			Handler:    _Content_Login_Handler,
+			Handler:    _User_Login_Handler,
+		},
+		{
+			MethodName: "GetUserPublicKey",
+			Handler:    _User_GetUserPublicKey_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "user.proto",
+	Metadata: "proto/user.proto",
 }
